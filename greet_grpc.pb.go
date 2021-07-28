@@ -3,7 +3,10 @@
 package greetpb
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,6 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GteetServiceClient interface {
+	// Unary API
+	Greet(ctx context.Context, in *GreetRequest, opts ...grpc.CallOption) (*GreetResponse, error)
 }
 
 type gteetServiceClient struct {
@@ -25,10 +30,21 @@ func NewGteetServiceClient(cc grpc.ClientConnInterface) GteetServiceClient {
 	return &gteetServiceClient{cc}
 }
 
+func (c *gteetServiceClient) Greet(ctx context.Context, in *GreetRequest, opts ...grpc.CallOption) (*GreetResponse, error) {
+	out := new(GreetResponse)
+	err := c.cc.Invoke(ctx, "/greet.GteetService/Greet", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GteetServiceServer is the server API for GteetService service.
 // All implementations must embed UnimplementedGteetServiceServer
 // for forward compatibility
 type GteetServiceServer interface {
+	// Unary API
+	Greet(context.Context, *GreetRequest) (*GreetResponse, error)
 	mustEmbedUnimplementedGteetServiceServer()
 }
 
@@ -36,6 +52,9 @@ type GteetServiceServer interface {
 type UnimplementedGteetServiceServer struct {
 }
 
+func (UnimplementedGteetServiceServer) Greet(context.Context, *GreetRequest) (*GreetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Greet not implemented")
+}
 func (UnimplementedGteetServiceServer) mustEmbedUnimplementedGteetServiceServer() {}
 
 // UnsafeGteetServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -49,13 +68,36 @@ func RegisterGteetServiceServer(s grpc.ServiceRegistrar, srv GteetServiceServer)
 	s.RegisterService(&GteetService_ServiceDesc, srv)
 }
 
+func _GteetService_Greet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GreetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GteetServiceServer).Greet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/greet.GteetService/Greet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GteetServiceServer).Greet(ctx, req.(*GreetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GteetService_ServiceDesc is the grpc.ServiceDesc for GteetService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GteetService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "greet.GteetService",
 	HandlerType: (*GteetServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "greetpb/greet.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Greet",
+			Handler:    _GteetService_Greet_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "greetpb/greet.proto",
 }
